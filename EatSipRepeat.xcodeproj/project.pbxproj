@@ -42,10 +42,10 @@
 		873395F32DCE88B70069FB9B /* Exceptions for "EatSipRepeat" folder in "EatSipRepeatTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AirtableService.swift,
 				ContentView.swift,
 				EatSipRepeatApp.swift,
 				Info.plist,
+				MenuFlow.swift,
 				Recipe.swift,
 				RecipeCarouselPageView.swift,
 				Style.swift,
@@ -56,10 +56,10 @@
 		873395F42DCE88B70069FB9B /* Exceptions for "EatSipRepeat" folder in "EatSipRepeatUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AirtableService.swift,
 				ContentView.swift,
 				EatSipRepeatApp.swift,
 				Info.plist,
+				MenuFlow.swift,
 				Recipe.swift,
 				RecipeCarouselPageView.swift,
 				Style.swift,
