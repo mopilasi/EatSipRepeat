@@ -1,18 +1,12 @@
 import SwiftUI
 
 struct ContentView: View {
+    // MARK: — UI State
     @State private var selectedSeason: String = "Spring"
     @State private var isSideMenuPresented = false
 
-    /// Sample menus for “Spring”
-    private let sampleMenus: [Menu] = [
-        // … your existing sampleMenus here …
-    ]
-
-    /// Group by season for fast lookup
-    private var menusBySeason: [String: [Menu]] {
-        Dictionary(grouping: sampleMenus, by: \.season)
-    }
+    // MARK: — ViewModel
+    @StateObject private var viewModel = MenuViewModel()
 
     var body: some View {
         NavigationStack {
@@ -23,8 +17,8 @@ struct ContentView: View {
 
                 // ─── Main content
                 VStack(spacing: Spacing.lg) {
+                    // Header
                     HStack {
-                        // Hamburger
                         Button {
                             withAnimation { isSideMenuPresented.toggle() }
                         } label: {
@@ -41,20 +35,32 @@ struct ContentView: View {
 
                         Spacer()
 
-                        // Balancing spacer
+                        // invisible spacer for symmetry
                         Rectangle()
                             .fill(Color.clear)
                             .frame(width: 24, height: 24)
                     }
                     .padding(.horizontal, Spacing.md)
 
-                    // Season pill picker
+                    // Season picker
                     SeasonPicker(selected: $selectedSeason)
 
-                    // Menu cards
+                    // Loading / Error
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .padding()
+                    }
+                    if let err = viewModel.errorMessage {
+                        Text(err)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+
+                    // Menu cards from Airtable
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: Spacing.md) {
-                            ForEach(menusBySeason[selectedSeason] ?? []) { menu in
+                            ForEach(viewModel.menus) { menu in
                                 NavigationLink(
                                     destination: MenuDetailView(
                                         menuTitle: menu.title,
@@ -68,9 +74,9 @@ struct ContentView: View {
                         .padding(.vertical, Spacing.md)
                     }
 
-                    // Shuffle
+                    // Shuffle button
                     Button("Shuffle") {
-                        // TODO: shuffle logic
+                        Task { await viewModel.loadMenus(for: selectedSeason) }
                     }
                     .font(.custom("DrukWide-Bold", size: 33))
                     .frame(maxWidth: .infinity, minHeight: 75)
@@ -96,11 +102,15 @@ struct ContentView: View {
                 }
             }
             .navigationBarHidden(true)
+            // Kick off load on appear & when season changes
+            .task(id: selectedSeason) {
+                await viewModel.loadMenus(for: selectedSeason)
+            }
         }
     }
 }
 
-// MARK: – SeasonPicker
+// MARK: – SeasonPicker (unchanged)
 struct SeasonPicker: View {
     @Binding var selected: String
     private let seasons = ["Spring", "Summer", "Autumn", "Winter"]
@@ -127,15 +137,14 @@ struct SeasonPicker: View {
         }
         .padding(4)
         .overlay(
-            Capsule()
-                .stroke(Color.theme.forestGreen, lineWidth: 1)
+            Capsule().stroke(Color.theme.forestGreen, lineWidth: 1)
         )
         .padding(.horizontal, Spacing.md)
         .frame(height: 44)
     }
 }
 
-// MARK: – MenuCard
+// MARK: – MenuCard (unchanged)
 private struct MenuCard: View {
     let menu: Menu
 
@@ -158,8 +167,6 @@ private struct MenuCard: View {
         .padding(.horizontal, Spacing.md)
     }
 }
-
-
 
 // MARK: – Preview
 struct ContentView_Previews: PreviewProvider {
