@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Your app’s name -->
+  <key>CFBundleName</key>
+  <string>EatSipRepeat</string>
+
+  <!-- This should match your target’s Product Bundle Identifier -->
+  <key>CFBundleIdentifier</key>
+  <string>polinakyrylova.EatSipRepeat</string>
+
+  <!-- Build number -->
+  <key>CFBundleVersion</key>
+  <string>1</string>
+
+  <!-- Marketing version -->
+  <key>CFBundleShortVersionString</key>
+  <string>1.0</string>
+
+  <!-- Custom fonts bundled with the app -->
+  <key>UIAppFonts</key>
+  <array>
+      <!-- Variable Lora -->
+      <string>Lora.ttf</string>
+
+      <!-- Druk Wide Bold -->
+      <string>DrukWideBold.ttf</string>
+
+      <!-- Variable Inter -->
+      <string>Inter.ttf</string>
+  </array>
+
+  <!-- App Transport Security, if you need HTTP calls -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <false/>
+  </dict>
+</dict>
+</plist>
