@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		876CC5652DD046D4005C60FA /* Lora.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 876CC5642DD046D4005C60FA /* Lora.ttf */; };
-		876CC5672DD046F8005C60FA /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 876CC5662DD046F8005C60FA /* Inter.ttf */; };
-		876CC5692DD04703005C60FA /* DrukWideBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 876CC5682DD04703005C60FA /* DrukWideBold.ttf */; };
+		876CC5652DD046D4005C60FA /* Lora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 876CC5642DD046D4005C60FA /* Lora-Regular.ttf */; };
+		876CC5672DD046F8005C60FA /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 876CC5662DD046F8005C60FA /* Inter-Regular.ttf */; };
+		876CC5692DD04703005C60FA /* DrukWide-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 876CC5682DD04703005C60FA /* DrukWide-Bold.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,9 +33,9 @@
 		873395C52DCE88860069FB9B /* EatSipRepeat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EatSipRepeat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		873395D22DCE88870069FB9B /* EatSipRepeatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EatSipRepeatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		873395DC2DCE88870069FB9B /* EatSipRepeatUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EatSipRepeatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		876CC5642DD046D4005C60FA /* Lora.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Lora.ttf; sourceTree = "<group>"; };
-		876CC5662DD046F8005C60FA /* Inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Inter.ttf; sourceTree = "<group>"; };
-		876CC5682DD04703005C60FA /* DrukWideBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = DrukWideBold.ttf; sourceTree = "<group>"; };
+		876CC5642DD046D4005C60FA /* Lora-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Lora-Regular.ttf"; sourceTree = "<group>"; };
+		876CC5662DD046F8005C60FA /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
+		876CC5682DD04703005C60FA /* DrukWide-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DrukWide-Bold.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -45,7 +45,7 @@
 				AirtableService.swift,
 				ContentView.swift,
 				EatSipRepeatApp.swift,
-				info.plist,
+				Info.plist,
 				Recipe.swift,
 				RecipeCarouselPageView.swift,
 				Style.swift,
@@ -59,7 +59,7 @@
 				AirtableService.swift,
 				ContentView.swift,
 				EatSipRepeatApp.swift,
-				info.plist,
+				Info.plist,
 				Recipe.swift,
 				RecipeCarouselPageView.swift,
 				Style.swift,
@@ -67,10 +67,10 @@
 			);
 			target = 873395DB2DCE88870069FB9B /* EatSipRepeatUITests */;
 		};
-		876CC54F2DD010EF005C60FA /* Exceptions for "EatSipRepeat" folder in "EatSipRepeat" target */ = {
+		876CC59E2DD06506005C60FA /* Exceptions for "EatSipRepeat" folder in "EatSipRepeat" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				info.plist,
+				Info.plist,
 			);
 			target = 873395C42DCE88860069FB9B /* EatSipRepeat */;
 		};
@@ -80,7 +80,7 @@
 		873395C72DCE88860069FB9B /* EatSipRepeat */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				876CC54F2DD010EF005C60FA /* Exceptions for "EatSipRepeat" folder in "EatSipRepeat" target */,
+				876CC59E2DD06506005C60FA /* Exceptions for "EatSipRepeat" folder in "EatSipRepeat" target */,
 				873395F32DCE88B70069FB9B /* Exceptions for "EatSipRepeat" folder in "EatSipRepeatTests" target */,
 				873395F42DCE88B70069FB9B /* Exceptions for "EatSipRepeat" folder in "EatSipRepeatUITests" target */,
 			);
@@ -127,9 +127,9 @@
 		873395BC2DCE88860069FB9B = {
 			isa = PBXGroup;
 			children = (
-				876CC5682DD04703005C60FA /* DrukWideBold.ttf */,
-				876CC5642DD046D4005C60FA /* Lora.ttf */,
-				876CC5662DD046F8005C60FA /* Inter.ttf */,
+				876CC5682DD04703005C60FA /* DrukWide-Bold.ttf */,
+				876CC5642DD046D4005C60FA /* Lora-Regular.ttf */,
+				876CC5662DD046F8005C60FA /* Inter-Regular.ttf */,
 				873395C72DCE88860069FB9B /* EatSipRepeat */,
 				873395D52DCE88870069FB9B /* EatSipRepeatTests */,
 				873395DF2DCE88870069FB9B /* EatSipRepeatUITests */,
@@ -277,9 +277,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				876CC5692DD04703005C60FA /* DrukWideBold.ttf in Resources */,
-				876CC5672DD046F8005C60FA /* Inter.ttf in Resources */,
-				876CC5652DD046D4005C60FA /* Lora.ttf in Resources */,
+				876CC5692DD04703005C60FA /* DrukWide-Bold.ttf in Resources */,
+				876CC5672DD046F8005C60FA /* Inter-Regular.ttf in Resources */,
+				876CC5652DD046D4005C60FA /* Lora-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -465,6 +465,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EatSipRepeat/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -492,6 +493,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EatSipRepeat/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

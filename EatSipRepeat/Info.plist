@@ -11,6 +11,7 @@
   <key>CFBundleIdentifier</key>
   <string>polinakyrylova.EatSipRepeat</string>
 
+  
   <!-- Build number -->
   <key>CFBundleVersion</key>
   <string>1</string>
@@ -22,14 +23,9 @@
   <!-- Custom fonts bundled with the app -->
   <key>UIAppFonts</key>
   <array>
-      <!-- Variable Lora -->
-      <string>Lora.ttf</string>
-
-      <!-- Druk Wide Bold -->
-      <string>DrukWideBold.ttf</string>
-
-      <!-- Variable Inter -->
-      <string>Inter.ttf</string>
+      <string>DrukWide-Bold.ttf</string>
+      <string>Inter-Regular.ttf</string>
+      <string>Lora-Regular.ttf</string>
   </array>
 
   <!-- App Transport Security, if you need HTTP calls -->

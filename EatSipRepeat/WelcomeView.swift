@@ -1,78 +1,68 @@
 import SwiftUI
 
 struct WelcomeView: View {
-    @AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var logoAppeared = false
-    @State private var buttonPulsing = false
+    @State private var pulse = false
 
     var body: some View {
         ZStack {
-            // Coral background matching logo
+            Color.theme.primaryCoral
+                .ignoresSafeArea()
 
-            VStack(spacing: Spacing.lg) {
-                Spacer()
+            VStack {
+                Spacer(minLength: 100)
 
-                // Logo animation: larger size
                 Image("AppLogo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 350, height: 350)
-                    .padding(.horizontal, Spacing.md)
-                    .scaleEffect(logoAppeared ? 1 : 0.8)
-                    .opacity(logoAppeared ? 1 : 0)
+                    .scaleEffect(logoAppeared ? 1 : 0.5)
                     .onAppear {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                             logoAppeared = true
                         }
                     }
 
-                // Tagline appears together with logo (no delay), bold Lora
                 Text("Take the guesswork out of hosting a dinner party")
-
-                    .fontWeight(.bold)
-
+                    .font(.custom("Lora-Regular", size: 18))
+                    .foregroundColor(Color.theme.cream)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, Spacing.xl)
-                    .opacity(logoAppeared ? 1 : 0)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: logoAppeared)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 16)
 
                 Spacer()
 
-                // “Let’s Go” using accent (green) button
                 Button(action: {
                     hasSeenWelcome = true
                 }) {
-                    Text("Let’s Go")
-                    
+                    Text("Let’s go")
+                        .font(.custom("DrukWide-Bold", size: 16))
+                        .foregroundColor(Color.theme.cream)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, Spacing.md)
+                        .frame(height: 56)
                 }
-                .buttonStyle(FilledAccentButton())
-                .padding(.horizontal, Spacing.md)
-                .scaleEffect(buttonPulsing ? 1.05 : 1)
+                .background(Color.theme.forestGreen)
+                .clipShape(RoundedRectangle(cornerRadius: 28))
+                .padding(.horizontal, 24)
+                .padding(.bottom, 34)
+                .scaleEffect(pulse ? 1.05 : 1)
                 .onAppear {
                     withAnimation(
                         Animation.easeInOut(duration: 1)
                             .repeatForever(autoreverses: true)
                     ) {
-                        buttonPulsing = true
+                        pulse = true
                     }
                 }
-                .padding(.bottom, Spacing.xl)
             }
         }
     }
 }
 
-// MARK: – Accent button style for welcome screen
-struct FilledAccentButton: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-    
-            .background(
-
-                    .opacity(configuration.isPressed ? 0.85 : 1)
-            )
-            .clipShape(Capsule())
+struct WelcomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        WelcomeView()
     }
 }
+
