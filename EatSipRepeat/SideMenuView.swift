@@ -17,10 +17,7 @@ struct SideMenuView: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 // ─── Header ─────────────────────────────────
                 HStack(spacing: Spacing.sm) {
-                    Image("AppLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 50, height: 50)
+               
                     Text("Eat Sip Repeat")
                         .font(.custom("DrukWide-Bold", size: 24))
                         .foregroundColor(Color.theme.forestGreen)
