@@ -5,72 +5,63 @@ struct SideMenuView: View {
     @State private var showAboutSheet = false
     @Environment(\.openURL) private var openURL
 
-    // Replace with your actual Typeform feedback URL
     private let feedbackURL = URL(string: "https://form.typeform.com/to/oQcMvxHG")!
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            // MARK: – Header
-            HStack(spacing: 12) {
-                Image("AppLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 60, height: 60)
-                Text("Eat Sip Repeat")
-                    .font(.custom("DrukWide-Bold", size: 24))
-                    .foregroundColor(Color.theme.forestGreen)
+        ZStack {
+            Color.theme.cream.ignoresSafeArea()
+            VStack(alignment: .leading, spacing: Spacing.xl) {
+                HStack(spacing: 12) {
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60, height: 60)
+                    Text("Eat Sip Repeat")
+                        .font(.custom("DrukWide-Bold", size: 24))
+                        .foregroundColor(Color.theme.forestGreen)
+                }
+
+                Group {
+                    Button(action: { withAnimation { isShowing = false } }) {
+                        SideMenuRow(icon: "house.fill", title: "Home")
+                    }
+                    NavigationLink(destination: FavouritesView().onAppear { isShowing = false }) {
+                        SideMenuRow(icon: "heart.fill", title: "Favourites")
+                    }
+                    Button(action: { showAboutSheet = true }) {
+                        SideMenuRow(icon: "info.circle", title: "About Us")
+                    }
+                    Button(action: { openURL(feedbackURL) }) {
+                        SideMenuRow(icon: "bubble.left", title: "Feedback")
+                    }
+                }
+
+                Spacer()
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("v1.0.0")
+                        .font(.custom("Inter-Regular", size: 12))
+                        .foregroundColor(.secondary)
+                    Button("Terms & Privacy") {}
+                        .font(.custom("Inter-Regular", size: 12))
+                        .foregroundColor(Color.theme.forestGreen)
+                }
             }
-
-            // MARK: – Menu Items
-            Group {
-                Button(action: { withAnimation { isShowing = false } }) {
-                    SideMenuRow(icon: "house.fill", title: "Home")
-                }
-
-                NavigationLink(destination: FavouritesView().onAppear { isShowing = false }) {
-                    SideMenuRow(icon: "heart.fill", title: "Favourites")
-                }
-
-                Button(action: { showAboutSheet = true }) {
-                    SideMenuRow(icon: "info.circle", title: "About Us")
-                }
-
-                Button(action: { openURL(feedbackURL) }) {
-                    SideMenuRow(icon: "bubble.left", title: "Feedback")
-                }
-            }
-
-            Spacer()
-
-            // MARK: – Footer
-            VStack(alignment: .leading, spacing: 4) {
-                Text("v1.0.0")
-                    .font(.custom("Inter-Regular", size: 12))
-                    .foregroundColor(.secondary)
-                Button("Terms & Privacy") {
-                    // open your terms URL
-                }
-                .font(.custom("Inter-Regular", size: 12))
-                .foregroundColor(Color.theme.forestGreen)
-            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.top, Spacing.xl)
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 60)
-        .background(Color.theme.cream)
-        .edgesIgnoringSafeArea(.vertical)
         .sheet(isPresented: $showAboutSheet) {
             AboutUsView()
         }
     }
 }
 
-// MARK: – Helper Row View
 private struct SideMenuRow: View {
     let icon: String
     let title: String
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(Color.theme.forestGreen)
@@ -81,36 +72,104 @@ private struct SideMenuRow: View {
             Spacer()
         }
         .contentShape(Rectangle())
-        .padding(.vertical, 8)
+        .padding(.vertical, Spacing.sm)
     }
 }
 
-// MARK: – Stub Views for Navigation & About Sheet
 struct FavouritesView: View {
     var body: some View {
-        Text("Your saved favourites will appear here.")
-            .padding()
-            .navigationTitle("Favourites")
+        ZStack {
+            Color.theme.cream.ignoresSafeArea()
+            VStack(spacing: Spacing.lg) {
+                Text("Favourites")
+                    .font(.custom("DrukWide-Bold", size: 28))
+                    .foregroundColor(Color.theme.forestGreen)
+                    .padding(.top, Spacing.xl)
+
+                Text("You haven't saved any recipes yet.")
+                    .font(.custom("Inter-Regular", size: 16))
+                    .foregroundColor(Color.theme.forestGreen)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.md)
+
+                Spacer()
+            }
+            .padding(.top, Spacing.md)
+        }
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 struct AboutUsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+
+    private let instagramURL = URL(string: "https://instagram.com/p_polina")!
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("About Eat Sip Repeat")
-                .font(.title)
-            Text("We’re on a mission to make your dinner parties stress-free and fun!")
-                .multilineTextAlignment(.center)
-                .padding()
+            ZStack {
+                Color.theme.cream
+                    .ignoresSafeArea()
 
-            Button("Dismiss") {
-                dismiss()
+                ScrollView {
+                    VStack(spacing: Spacing.lg) {
+                        // 1) Portrait
+                        Image("AboutUs")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 160, height: 160)
+                        
+                    // Title
+                    Text("Meet the Maker")
+                        .font(.custom("DrukWide-Bold", size: 25))
+                        .foregroundColor(Color.theme.forestGreen)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Spacing.md)
+
+                    // Body paragraphs
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
+                        Text("Polina is a product manager on sabbatical, a dinner party enthusiast, and a bit too familiar with the chaos of recipe overload.")
+
+                        Text("Eat Sip Repeat started as a “what if I just made this easier for myself?” side project, and after many iterations and more than one “how do I undo this” moment, Eat Sip Repeat was born.")
+
+                        Text("She hopes it helps you skip the scroll and get to the good part: cooking, sipping, and sharing these moments with your loved ones.")
+                    }
+                    .font(.custom("Inter-Regular", size: 16))
+                    .foregroundColor(Color.theme.forestGreen)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(6)
+                    .padding(.horizontal, Spacing.md)
+
+                    // Call‑to‑action
+                    VStack(spacing: Spacing.sm) {
+                        Text("Say hi on Instagram:")
+                            .font(.custom("Inter-Medium", size: 16))
+                            .foregroundColor(Color.theme.forestGreen)
+                            .multilineTextAlignment(.center)
+
+                        Button(action: { openURL(instagramURL) }) {
+                            Text("@p_polina")
+                                .font(.custom("Inter-Semibold", size: 18))
+                                .foregroundColor(Color.theme.forestGreen)
+                                .underline()
+                        }
+                    }
+                    .padding(.horizontal, Spacing.md)
+
+                    // Dismiss button
+                    Button(action: { dismiss() }) {
+                        Text("Got it!")
+                            .font(.custom("Inter-Semibold", size: 16))
+                            .foregroundColor(Color.theme.cream)
+                            .padding(.vertical, Spacing.sm)
+                            .padding(.horizontal, Spacing.lg)
+                            .background(Color.theme.forestGreen)
+                            .cornerRadius(8)
+                    }
+                    .padding(.bottom, Spacing.xl)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .font(.custom("Inter-Semibold", size: 16))
-            .padding(.top, 16)
         }
-        .padding()
     }
 }
