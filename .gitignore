@@ -1,1 +1,37 @@
+# macOS
+.DS_Store
+
+# Xcode
+#
+# User specific settings
+*.xcuserdata/
+
+# Build products and intermediates
+build/
+DerivedData/
+
+# Swift Package Manager
+#
+# Build products and resolved dependencies
+/.build/
+/Packages/
+/*.resolved
+
+# Cocoapods
+#
+# If you're using Cocoapods, uncomment the following line
+# Pods/
+
+# Carthage
+#
+# If you're using Carthage, uncomment the following lines
+# Carthage/Build
+# Carthage/Checkouts
+
+# Secrets - Ensure this is present and correct
 AirtableConfig.plist
+
+# Other common ignores
+*.swp
+*~
+*.orig

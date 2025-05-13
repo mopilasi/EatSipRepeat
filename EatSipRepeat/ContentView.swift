@@ -1,18 +1,33 @@
 import SwiftUI
 
+// Helper struct to store carousel state per season
+private struct SeasonCarouselState {
+    var currentPage: Int = 0
+    var visitedPages: Set<Int> = [0] // Start with page 0 visited
+}
+
 struct ContentView: View {
     // MARK: — UI State
     @State private var selectedSeason: String = "Spring"
     @State private var isSideMenuPresented = false
-    @State private var currentPage = 0
-    @State private var visitedPages: Set<Int> = []
+    
+    // These will now reflect the state for the *current* selectedSeason
+    @State private var currentPage: Int = 0 
+    @State private var visitedPages: Set<Int> = [0]
+
+    // Storage for carousel state across different seasons
+    @State private var seasonCarouselStates: [String: SeasonCarouselState] = [:]
+
+    @State private var showComingSoonSheet = false // New state for the sheet
 
     // MARK: — ViewModel
     @StateObject private var viewModel = MenuViewModel()
 
-    // Unlock the button once every page has been seen
+    // Unlock the button once every page has been seen for the current season's menus
     private var canGenerate: Bool {
-        visitedPages.count >= viewModel.menus.count
+        // Ensure menus are loaded before checking count
+        guard !viewModel.menus.isEmpty else { return false }
+        return visitedPages.count >= viewModel.menus.count
     }
 
     var body: some View {
@@ -77,16 +92,40 @@ struct ContentView: View {
                     .frame(height: 280)
                     .padding(.vertical, Spacing.md)
                     .onAppear {
-                        // mark the first page as visited
-                        visitedPages.insert(0)
+                        // Ensures the initial page is marked visited when TabView appears or menus load.
+                        // This complements the initialization in onChange(of: selectedSeason).
+                        if !viewModel.menus.isEmpty {
+                             visitedPages.insert(currentPage) // Mark current page as visited
+                        }
                     }
                     .onChange(of: currentPage) { newPage in
                         visitedPages.insert(newPage)
                     }
+                    // This onChange will handle saving state for the outgoing season 
+                    // and loading/initializing state for the new season.
+                    .onChange(of: selectedSeason) { oldValue, newValue in
+                        // Save state for the season we are leaving (oldValue)
+                        // Ensure oldValue is a valid key (e.g. not the initial empty string if that were possible)
+                        if !oldValue.isEmpty {
+                            seasonCarouselStates[oldValue] = SeasonCarouselState(currentPage: currentPage, visitedPages: visitedPages)
+                        }
+                        
+                        // Load state for the new season (newValue) or initialize it
+                        if let savedState = seasonCarouselStates[newValue] {
+                            currentPage = savedState.currentPage
+                            visitedPages = savedState.visitedPages
+                        } else {
+                            currentPage = 0
+                            visitedPages = [0] // Default for a new/unvisited season
+                        }
+                    }
 
                     // ─── Action button
-                    Button(canGenerate ? "Generate New Menus" : "Swipe to view all") {
-                        Task { await viewModel.loadMenus(for: selectedSeason) }
+                    Button(canGenerate ? "generate new menus" : "swipe to see more") {
+                        if canGenerate {
+                            showComingSoonSheet = true // Show sheet when "Generate New Menus" is tapped
+                        }
+                        // If !canGenerate, the button is disabled, so this action block isn't triggered by a tap.
                     }
                     .font(.custom("DrukWide-Bold", size: 33))
                     .frame(maxWidth: .infinity, minHeight: 75)
@@ -94,6 +133,9 @@ struct ContentView: View {
                     .padding(.bottom, Spacing.lg)
                     .disabled(!canGenerate)
                     .opacity(canGenerate ? 1 : 0.5)
+                    .sheet(isPresented: $showComingSoonSheet) { // New sheet modifier
+                        ComingSoonView()
+                    }
 
                     Spacer()
                 }
@@ -115,8 +157,59 @@ struct ContentView: View {
             }
             .navigationBarHidden(true)
             .task(id: selectedSeason) {
+                // The responsibility of setting currentPage and visitedPages is now handled by 
+                // .onChange(of: selectedSeason). This task just loads data.
                 await viewModel.loadMenus(for: selectedSeason)
             }
+        }
+    }
+}
+
+// MARK: - ComingSoonView (New View)
+
+private struct ComingSoonView: View {
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationView { // Optional: if you want a navigation bar for the Done button
+            VStack(alignment: .center, spacing: Spacing.lg) {
+                Spacer()
+
+                Image("UnderConstruction") // Make sure this image exists in your Assets
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 170, height: 170) // Adjust size as needed
+                    .padding(.bottom, Spacing.md)
+
+                Text("Feature Coming Soon!")
+                    .font(.custom("DrukWide-Bold", size: 26)) // Example font, adjust as needed
+                    .foregroundColor(Color.theme.forestGreen)
+                    .multilineTextAlignment(.center)
+
+                Text("We’re teaching the app to stir the pot — expect piping‑hot, brand‑new menus to land in a future release!")
+                    .font(.custom("Inter-Regular", size: 16)) // Example font
+                    .foregroundColor(Color.theme.primaryCoral)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.lg)
+                
+                Spacer()
+                Spacer()
+
+            }
+            .padding(Spacing.xl)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.theme.cream.ignoresSafeArea()) // Match your app's theme
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.custom("Inter-Semibold", size: 16))
+                    .foregroundColor(Color.theme.primaryCoral)
+                }
+            }
+            // If not using NavigationView for the toolbar, you might place a button directly in the VStack:
+            // Button("OK") { dismiss() }.buttonStyle(FilledCoralButton()).padding(.top)
         }
     }
 }
