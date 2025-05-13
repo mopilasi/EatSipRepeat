@@ -1,9 +1,9 @@
 import Foundation
 
 /// 1 attachment in Airtable’s “Image” field → `url` string
-struct Attachment: Decodable, Equatable { let url: String }
+struct Attachment: Decodable, Equatable, Hashable { let url: String }
 
-struct Recipe: Decodable, Identifiable {
+struct Recipe: Decodable, Identifiable, Equatable, Hashable {
     let id: String                           // Airtable “id”
     let title: String                        // “Title”
     let course: String                       // “Course”

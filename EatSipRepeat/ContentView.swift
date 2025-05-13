@@ -23,11 +23,14 @@ struct ContentView: View {
     // MARK: — ViewModel
     @StateObject private var viewModel = MenuViewModel()
 
-    // Unlock the button once every page has been seen for the current season's menus
-    private var canGenerate: Bool {
-        // Ensure menus are loaded before checking count
-        guard !viewModel.menus.isEmpty else { return false }
-        return visitedPages.count >= viewModel.menus.count
+    // Computed property for the items to display in the TabView
+    private var carouselPages: [CarouselPageItem] {
+        var items: [CarouselPageItem] = viewModel.menus.map { .menu($0) }
+        // Always add the "Add Action" card if there are any menus for the current season.
+        if !viewModel.menus.isEmpty {
+            items.append(.addAction)
+        }
+        return items
     }
 
     var body: some View {
@@ -97,17 +100,28 @@ struct ContentView: View {
                                 .frame(height: 260)
                                 .tag(-1) // Special tag for this placeholder page
                             } else {
-                                // Only show MenuCards if NOT loading AND menus are NOT empty
-                                ForEach(Array(viewModel.menus.enumerated()), id: \.element.id) { index, menu in
-                                    MenuCard(menu: menu)
+                                // Iterate over the combined list of menus and the potential action card
+                                ForEach(Array(carouselPages.enumerated()), id: \.element.id) { index, pageItem in
+                                    switch pageItem {
+                                    case .menu(let menu):
+                                        MenuCard(menu: menu, isActive: index == currentPage)
+                                            .padding(.horizontal, Spacing.md)
+                                            .frame(height: 260)
+                                            .frame(maxWidth: .infinity)
+                                            .tag(index) // Tag with the index from carouselPages
+                                    case .addAction:
+                                        AddActionCardView {
+                                            showComingSoonSheet = true
+                                        }
                                         .padding(.horizontal, Spacing.md)
                                         .frame(height: 260)
                                         .frame(maxWidth: .infinity)
-                                        .tag(index)
+                                        .tag(index) // Tag with the index from carouselPages
+                                    }
                                 }
                             }
                         }
-                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never)) // Hide default indicator
                         .id(viewModel.isLoading)
 
                         if viewModel.isLoading {
@@ -142,6 +156,12 @@ struct ContentView: View {
                             visitedPages = [0] // Default for a new/unvisited season
                         }
                     }
+                    .onChange(of: currentPage) { oldValue, newPage in
+                        // Add the new page to visitedPages if it's a valid menu item index
+                        if newPage >= 0 && newPage < viewModel.menus.count { // Only track actual menu indices
+                            visitedPages.insert(newPage)
+                        }
+                    }
                     .onAppear {
                         // Initial load for the default selected season in an async Task
                         if viewModel.menus.isEmpty {
@@ -154,44 +174,36 @@ struct ContentView: View {
                             seasonCarouselStates[selectedSeason] = SeasonCarouselState(currentPage: 0, visitedPages: [0])
                         }
                     }
+                    
+                    // Custom Page Indicator View
+                    // Show only if not loading and there are pages to indicate
+                    if !viewModel.isLoading && !carouselPages.isEmpty && carouselPages.count > 1 {
+                        CustomPageIndicatorView(numberOfPages: carouselPages.count, currentPage: $currentPage)
+                            .padding(.bottom, Spacing.sm) // Add some padding
+                    }
 
                     Spacer()
 
-                    // ─── Action button
-                    Button(canGenerate ? "Generate New Menus" : "Swipe to see more") {
-                        if canGenerate {
-                            showComingSoonSheet = true // Show sheet when "Generate New Menus" is tapped
-                        }
-                        // If !canGenerate, the button is disabled, so this action block isn't triggered by a tap.
-                    }
-                    .font(.custom("DrukWide-Bold", size: 33))
-                    .frame(maxWidth: .infinity, minHeight: 75)
-                    .buttonStyle(FilledCoralButton())
-                    .padding(.bottom, Spacing.lg)
-                    .disabled(!canGenerate)
-                    .opacity(canGenerate ? 1 : 0.5)
-                    .sheet(isPresented: $showComingSoonSheet) { // New sheet modifier
-                        ComingSoonView()
-                    }
+                    // ─── Side menu overlay & panel
+                    if isSideMenuPresented {
+                        Color.theme.forestGreen
+                            .opacity(0.5)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                withAnimation { isSideMenuPresented = false }
+                            }
 
+                        SideMenuView(isShowing: $isSideMenuPresented)
+                            .transition(.move(edge: .leading))
+                            .zIndex(1)
+                    }
                 }
                 .padding(.top, Spacing.xl)
-
-                // ─── Side menu overlay & panel
-                if isSideMenuPresented {
-                    Color.theme.forestGreen
-                        .opacity(0.5)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation { isSideMenuPresented = false }
-                        }
-
-                    SideMenuView(isShowing: $isSideMenuPresented)
-                        .transition(.move(edge: .leading))
-                        .zIndex(1)
-                }
             }
             .navigationBarHidden(true)
+            .sheet(isPresented: $showComingSoonSheet) {
+                ComingSoonView()
+            }
             .task(id: selectedSeason) {
                 // The responsibility of setting currentPage and visitedPages is now handled by 
                 // .onChange(of: selectedSeason). This task just loads data.
@@ -250,6 +262,34 @@ private struct ComingSoonView: View {
     }
 }
 
+// MARK: - Custom Page Indicator View
+private struct CustomPageIndicatorView: View {
+    let numberOfPages: Int
+    @Binding var currentPage: Int
+    
+    let activeDotColor: Color = Color.theme.primaryCoral
+    let inactiveDotColor: Color = Color.gray.opacity(0.5) // Or another subtle color
+    let dotSize: CGFloat = 8
+    let activeDotScale: CGFloat = 1.0 // Could make active dot larger if desired
+    let spacing: CGFloat = 8
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            ForEach(0..<numberOfPages, id: \.self) { index in
+                if index == currentPage {
+                    Circle()
+                        .fill(activeDotColor)
+                        .frame(width: dotSize * activeDotScale, height: dotSize * activeDotScale)
+                } else {
+                    Circle()
+                        .strokeBorder(inactiveDotColor, lineWidth: 1)
+                        .frame(width: dotSize, height: dotSize)
+                }
+            }
+        }
+    }
+}
+
 // MARK: – SeasonPicker (unchanged)
 struct SeasonPicker: View {
     @Binding var selected: String
@@ -287,6 +327,9 @@ struct SeasonPicker: View {
 // MARK: – MenuCard (for carousel, roomy & clear)
 private struct MenuCard: View {
     let menu: Menu
+    let isActive: Bool
+
+    @State private var cardOpacity: Double = 0 
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) { // Main VStack for the card
@@ -310,11 +353,34 @@ private struct MenuCard: View {
         }
         .padding(Spacing.lg)
         .frame(maxWidth: .infinity) // Ensure the VStack itself tries to take max width *within the padding*
-        .background(Color(hex: "#D1BFA3"))
+        .background(Color(hex: "#C7B89C")) // Darkened background for better contrast
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-        // The .frame(height: 260) and outer .frame(maxWidth: .infinity) 
-        // are applied by the parent TabView context in ContentView
+        .opacity(cardOpacity) // Apply opacity to the whole card
+        .onChange(of: isActive) { oldIsActive, newIsActive in
+            if newIsActive {
+                // Animate in card opacity
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
+                    cardOpacity = 1 
+                }
+            } else {
+                // Reset card opacity (can be animated out or instant)
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) { // Optional: animate out
+                    cardOpacity = 0
+                }
+            }
+        }
+        // Trigger initial animation if card is already active on appear
+        .onAppear {
+            if isActive {
+                // Using a slight delay to ensure the view is ready for animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
+                        cardOpacity = 1
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -326,7 +392,7 @@ private struct MenuCard: View {
                 .frame(width: 75, alignment: .leading)
 
             Text(text ?? "")
-                .font(.custom("Inter-Regular", size: 16))
+                .font(.custom("Inter-Semibold", size: 18)) // Updated font size and weight
                 .foregroundColor(Color.theme.forestGreen)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -340,5 +406,52 @@ private struct MenuCard: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+    }
+}
+
+// Enum to define the type of content for each carousel page
+private enum CarouselPageItem: Identifiable, Hashable {
+    case menu(Menu)
+    case addAction
+    
+    var id: String {
+        switch self {
+        case .menu(let menu):
+            return menu.id.uuidString // Convert UUID to String
+        case .addAction:
+            return "addActionCard"
+        }
+    }
+}
+
+// View for the "Add New Menu" card in the carousel
+private struct AddActionCardView: View {
+    var onTap: () -> Void
+
+    var body: some View {
+        VStack(spacing: Spacing.md) {
+            Spacer()
+            Image(systemName: "plus.circle.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 60, height: 60) // Adjusted size
+                .foregroundColor(Color.theme.primaryCoral)
+            
+            Text("Generate New Menus")
+                .font(.custom("Inter-Semibold", size: 18))
+                .foregroundColor(Color.theme.forestGreen)
+                .multilineTextAlignment(.center)
+
+            Spacer()
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensure it fills available space like MenuCard
+        .background(Color(hex: "#C7B89C")) // Consistent background
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .contentShape(Rectangle()) // Make the whole area tappable
+        .onTapGesture {
+            onTap()
+        }
     }
 }

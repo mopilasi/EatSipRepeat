@@ -15,7 +15,7 @@ enum Spacing {
 
 /// Data model for menu information (see `MenuCard` and `ContentView`).
 /// Driven by your Airtable data and manually conformed to `Identifiable` and `Decodable`.
-struct Menu: Identifiable {
+struct Menu: Identifiable, Decodable, Equatable, Hashable { // Added Equatable, Hashable. Assumed Decodable was intended.
     let id: UUID // Keep UUID for Menu, or change to String if also from Airtable with String ID
     let season: String
     let title: String
