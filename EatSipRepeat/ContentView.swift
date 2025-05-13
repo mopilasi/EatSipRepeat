@@ -183,22 +183,22 @@ struct ContentView: View {
                     }
 
                     Spacer()
-
-                    // ─── Side menu overlay & panel
-                    if isSideMenuPresented {
-                        Color.theme.forestGreen
-                            .opacity(0.5)
-                            .ignoresSafeArea()
-                            .onTapGesture {
-                                withAnimation { isSideMenuPresented = false }
-                            }
-
-                        SideMenuView(isShowing: $isSideMenuPresented)
-                            .transition(.move(edge: .leading))
-                            .zIndex(1)
-                    }
                 }
                 .padding(.top, Spacing.xl)
+
+                // ─── Side menu overlay & panel
+                if isSideMenuPresented {
+                    Color.theme.forestGreen
+                        .opacity(0.5)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation { isSideMenuPresented = false }
+                        }
+
+                    SideMenuView(isShowing: $isSideMenuPresented)
+                        .transition(.move(edge: .leading))
+                        .zIndex(2) // Ensure it's above everything else
+                }
             }
             .navigationBarHidden(true)
             .sheet(isPresented: $showComingSoonSheet) {
@@ -329,76 +329,92 @@ private struct MenuCard: View {
     let menu: Menu
     let isActive: Bool
 
-    @State private var cardOpacity: Double = 0 
+    @State private var cardOpacity: Double = 0
+
+    // Helper to get icon for course
+    private func icon(for course: String) -> String {
+        switch course {
+        case "Starter": return "🥗"
+        case "Main": return "🍽️" // Standard plate emoji
+        case "Dessert": return "🍰"
+        default: return "•" // Fallback bullet
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) { // Main VStack for the card
+        VStack(alignment: .leading, spacing: Spacing.md) { 
             // Title
             Text(menu.title)
                 .font(.custom("DrukWide-Bold", size: 24))
                 .foregroundColor(Color.theme.forestGreen)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading) // Ensure title area takes full width
-
-            // Three rows, each with a bold label + wrapped body text
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                row(label: "Starter", text: menu.recipes.first { $0.course == "Starter" }?.title)
-                row(label: "Main",    text: menu.recipes.first { $0.course == "Main" }?.title)
-                row(label: "Dessert", text: menu.recipes.first { $0.course == "Dessert" }?.title)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading) // Ensure recipe rows area takes full width
+                .frame(maxWidth: .infinity, alignment: .leading)
             
-            Spacer() // Pushes content above it to the top of the card's frame
+            // Three rows
+            VStack(alignment: .leading, spacing: 0) { 
+                if let starter = menu.recipes.first(where: { $0.course == "Starter" }) {
+                    courseRow(label: "Starter", text: starter.title, icon: icon(for: "Starter"))
+                    Divider().background(Color.theme.forestGreen.opacity(0.2)).padding(.vertical, Spacing.xs) 
+                }
+                if let main = menu.recipes.first(where: { $0.course == "Main" }) {
+                    courseRow(label: "Main", text: main.title, icon: icon(for: "Main"))
+                    Divider().background(Color.theme.forestGreen.opacity(0.2)).padding(.vertical, Spacing.xs) 
+                }
+                if let dessert = menu.recipes.first(where: { $0.course == "Dessert" }) {
+                    courseRow(label: "Dessert", text: dessert.title, icon: icon(for: "Dessert"))
+                    // No divider after the last item
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer()
         }
         .padding(Spacing.lg)
-        .frame(maxWidth: .infinity) // Ensure the VStack itself tries to take max width *within the padding*
-        .background(Color(hex: "#C7B89C")) // Darkened background for better contrast
+        .frame(maxWidth: .infinity)
+        .background(Color(hex: "#C7B89C"))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .opacity(cardOpacity) // Apply opacity to the whole card
+        .opacity(cardOpacity)
         .onChange(of: isActive) { oldIsActive, newIsActive in
-            if newIsActive {
-                // Animate in card opacity
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
-                    cardOpacity = 1 
-                }
-            } else {
-                // Reset card opacity (can be animated out or instant)
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) { // Optional: animate out
-                    cardOpacity = 0
-                }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
+                cardOpacity = newIsActive ? 1 : 0
             }
         }
-        // Trigger initial animation if card is already active on appear
         .onAppear {
             if isActive {
-                // Using a slight delay to ensure the view is ready for animation
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0)) {
                         cardOpacity = 1
                     }
                 }
+            } else { 
+                cardOpacity = 0
             }
         }
     }
 
+    // 
     @ViewBuilder
-    private func row(label: String, text: String?) -> some View {
-        HStack(alignment: .top, spacing: Spacing.sm) {
-            Text(label)
-                .font(.custom("Inter-Semibold", size: 16))
+    private func courseRow(label: String, text: String?, icon: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) { 
+            Text(label) // Label first
+                .font(.custom("Inter-Regular", size: 14))
                 .foregroundColor(Color.theme.forestGreen)
-                .frame(width: 75, alignment: .leading)
+                .frame(width: 65, alignment: .leading) // Fixed width for alignment
+            
+            Text(icon) // Icon as separator
+                .font(.custom("Inter-Regular", size: 14)) // Icon size same as label
+                .foregroundColor(Color.theme.forestGreen)
 
-            Text(text ?? "")
-                .font(.custom("Inter-Semibold", size: 18)) // Updated font size and weight
+            Text(text ?? "Not available") // Dish name
+                .font(.custom("Inter-Semibold", size: 18))
                 .foregroundColor(Color.theme.forestGreen)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading) // Ensure recipe title takes available width in HStack
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading) // Ensure HStack row takes full width
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -434,7 +450,7 @@ private struct AddActionCardView: View {
             Image(systemName: "plus.circle.fill")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 60, height: 60) // Adjusted size
+                .frame(width: 60, height: 60) 
                 .foregroundColor(Color.theme.primaryCoral)
             
             Text("Generate New Menus")
@@ -445,11 +461,11 @@ private struct AddActionCardView: View {
             Spacer()
         }
         .padding(Spacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensure it fills available space like MenuCard
-        .background(Color(hex: "#C7B89C")) // Consistent background
+        .frame(maxWidth: .infinity, maxHeight: .infinity) 
+        .background(Color(hex: "#C7B89C")) 
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .contentShape(Rectangle()) // Make the whole area tappable
+        .contentShape(Rectangle()) 
         .onTapGesture {
             onTap()
         }
