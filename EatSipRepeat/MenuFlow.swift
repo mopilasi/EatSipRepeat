@@ -52,7 +52,20 @@ final class CuratedMenuService { // RENAMED and MODIFIED
     static let shared = CuratedMenuService()
     private init() {}
 
-    private let apiKey = "patnKF1hl3tiA3ohM.f400040c37d715cb1ca8ccbfc627a0f12e0a746a21dad296d99059384b238685" // WARNING: Hardcoded API Key
+    // MODIFIED: Load API Key from AirtableConfig.plist
+    private var apiKey: String {
+        guard let filePath = Bundle.main.path(forResource: "AirtableConfig", ofType: "plist") else {
+            fatalError("Couldn't find file 'AirtableConfig.plist'.")
+        }
+        let plist = NSDictionary(contentsOfFile: filePath)
+        guard let value = plist?.object(forKey: "API_KEY") as? String else {
+            fatalError("Couldn't find key 'API_KEY' in 'AirtableConfig.plist'.")
+        }
+        if value.starts(with: "YOUR_") {
+            fatalError("Please replace 'YOUR_ACTUAL_AIRTABLE_API_KEY' in 'AirtableConfig.plist' with your actual Airtable API key.")
+        }
+        return value
+    }
     private let baseID = "appkaRHmM4gTj9E4m"
     private let tableName = "Curated Menus" // MODIFIED: Table name
 
