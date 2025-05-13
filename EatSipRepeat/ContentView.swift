@@ -120,8 +120,10 @@ struct ContentView: View {
                         }
                     }
 
+                    Spacer()
+
                     // ─── Action button
-                    Button(canGenerate ? "generate new menus" : "swipe to see more") {
+                    Button(canGenerate ? "Generate New Menus" : "Swipe to see more") {
                         if canGenerate {
                             showComingSoonSheet = true // Show sheet when "Generate New Menus" is tapped
                         }
@@ -137,7 +139,6 @@ struct ContentView: View {
                         ComingSoonView()
                     }
 
-                    Spacer()
                 }
                 .padding(.top, Spacing.xl)
 
@@ -186,7 +187,7 @@ private struct ComingSoonView: View {
                     .foregroundColor(Color.theme.forestGreen)
                     .multilineTextAlignment(.center)
 
-                Text("We’re teaching the app to stir the pot — expect piping‑hot, brand‑new menus to land in a future release!")
+                Text("We’re teaching the app to stir the pot — expect brand‑new menus to land in a future future!")
                     .font(.custom("Inter-Regular", size: 16)) // Example font
                     .foregroundColor(Color.theme.primaryCoral)
                     .multilineTextAlignment(.center)
