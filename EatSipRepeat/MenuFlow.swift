@@ -1,5 +1,6 @@
 // MenuFlow.swift
 // Models & services for fetching and generating 3 proposed menus
+// MODIFIED: Now fetches pre-defined menus from "Curated Menus" table.
 
 import Foundation
 import SwiftUI
@@ -10,40 +11,53 @@ private struct AirtableResponse: Decodable {
 }
 
 private struct AirtableRecord: Decodable {
-    let id: String
+    let id: String // Airtable record ID for the curated menu
     let fields: Fields
 }
 
+// MODIFIED: Fields struct to match "Curated Menus" table
 private struct Fields: Decodable {
-    let Title: String?
-    let Season: String?
-    let Course: String?
-    let sourceURL: String?           // maps to "Source URL"
-    let Image: [AirtableAttachment]? // maps to Image attachments
+    let season: String?
+    let menuName: String?
+    let starterName: String?
+    let starterURL: String?
+    let starterDescription: String?
+    let mainName: String?
+    let mainURL: String?
+    let mainDescription: String?
+    let dessertName: String?
+    let dessertURL: String?
+    let dessertDescription: String?
+    // Assuming no direct image attachment fields for individual recipes in "Curated Menus"
 
     private enum CodingKeys: String, CodingKey {
-        case Title, Season, Course, Image
-        case sourceURL = "Source URL"
+        case season = "Season"
+        case menuName = "Menu Name"
+        case starterName = "Starter Name"
+        case starterURL = "Starter URL"
+        case starterDescription = "Starter Description"
+        case mainName = "Main Name"
+        case mainURL = "Main URL"
+        case mainDescription = "Main Description"
+        case dessertName = "Dessert Name"
+        case dessertURL = "Dessert URL"
+        case dessertDescription = "Dessert Description"
     }
 }
 
-private struct AirtableAttachment: Decodable {
-    let url: String
-}
+// MARK: — CuratedMenuService (MODIFIED from RecipeService)
 
-// MARK: — RecipeService
-
-/// Fetches Recipe models from your Airtable base by season tag
-final class RecipeService {
-    static let shared = RecipeService()
+/// Fetches Menu models from your "Curated Menus" Airtable base by season tag
+final class CuratedMenuService { // RENAMED and MODIFIED
+    static let shared = CuratedMenuService()
     private init() {}
 
-    private let apiKey = "patnKF1hl3tiA3ohM.f400040c37d715cb1ca8ccbfc627a0f12e0a746a21dad296d99059384b238685"
+    private let apiKey = "patnKF1hl3tiA3ohM.f400040c37d715cb1ca8ccbfc627a0f12e0a746a21dad296d99059384b238685" // WARNING: Hardcoded API Key
     private let baseID = "appkaRHmM4gTj9E4m"
-    private let tableName = "Recipes"
+    private let tableName = "Curated Menus" // MODIFIED: Table name
 
-    /// Returns all recipes matching the given season (e.g. "Spring").
-    func fetchRecipes(for season: String) async throws -> [Recipe] {
+    /// Returns all menus matching the given season (e.g. "Spring").
+    func fetchCuratedMenus(for season: String) async throws -> [Menu] { // MODIFIED: Return type and logic
         var components = URLComponents(string: "https://api.airtable.com/v0/\(baseID)/\(tableName)")!
         components.queryItems = [
             URLQueryItem(name: "filterByFormula", value: "Season='\(season)'" )
@@ -53,54 +67,68 @@ final class RecipeService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            // Consider more detailed error handling, e.g., decoding Airtable error response
             throw URLError(.badServerResponse)
         }
 
         let result = try JSONDecoder().decode(AirtableResponse.self, from: data)
         return result.records.compactMap { rec in
             guard
-                let title = rec.fields.Title,
-                let course = rec.fields.Course,
-                let src = rec.fields.sourceURL
-            else { return nil }
+                let menuAirtableId = rec.id as String?, // Capture Airtable ID for the menu record
+                let menuTitle = rec.fields.menuName,
+                let menuSeason = rec.fields.season,
+                // Starter fields
+                let starterTitle = rec.fields.starterName,
+                let starterUrl = rec.fields.starterURL,
+                let starterDesc = rec.fields.starterDescription,
+                // Main fields
+                let mainTitle = rec.fields.mainName,
+                let mainUrl = rec.fields.mainURL,
+                let mainDesc = rec.fields.mainDescription,
+                // Dessert fields
+                let dessertTitle = rec.fields.dessertName,
+                let dessertUrl = rec.fields.dessertURL,
+                let dessertDesc = rec.fields.dessertDescription
+            else {
+                // Log an error or handle missing essential fields
+                print("Skipping record due to missing fields: \(rec.id)")
+                return nil
+            }
 
-            let attachments = rec.fields.Image?
-                .compactMap { Attachment(url: $0.url) } ?? []
-
-            return Recipe(
-                id: rec.id,
-                title: title,
-                course: course,
-                description: "",
-                imageAttachments: attachments,
-                sourceUrlString: src
+            // Create Recipe objects for Starter, Main, and Dessert
+            // Using menuAirtableId to create unique-enough IDs for child recipes
+            let starterRecipe = Recipe(
+                id: "\(menuAirtableId)-starter",
+                title: starterTitle,
+                course: "Starter",
+                description: starterDesc,
+                imageAttachments: [], // Assuming no specific image attachment fields in "Curated Menus"
+                sourceUrlString: starterUrl
             )
-        }
-    }
-}
 
-// MARK: — MenuService
+            let mainRecipe = Recipe(
+                id: "\(menuAirtableId)-main",
+                title: mainTitle,
+                course: "Main",
+                description: mainDesc,
+                imageAttachments: [],
+                sourceUrlString: mainUrl
+            )
 
-/// Generates `count` random menus (one Starter, Main, Dessert each) from a flat recipe list.
-struct MenuService {
-    static func generateMenus(from recipes: [Recipe], season: String, count: Int = 3) -> [Menu] {
-        let starters = recipes.filter { $0.course == "Starter" }
-        let mains    = recipes.filter { $0.course == "Main" }
-        let desserts = recipes.filter { $0.course == "Dessert" }
+            let dessertRecipe = Recipe(
+                id: "\(menuAirtableId)-dessert",
+                title: dessertTitle,
+                course: "Dessert",
+                description: dessertDesc,
+                imageAttachments: [],
+                sourceUrlString: dessertUrl
+            )
 
-        guard !starters.isEmpty, !mains.isEmpty, !desserts.isEmpty else {
-            return []
-        }
-
-        return (1...count).map { idx in
-            let s = starters.randomElement()!
-            let m = mains.randomElement()!
-            let d = desserts.randomElement()!
             return Menu(
-                id: UUID(),
-                season: season,
-                title: "\(season) Menu \(idx)",
-                recipes: [s, m, d]
+                id: UUID(), // Using UUID for Menu ID as per original Menu struct design
+                season: menuSeason,
+                title: menuTitle,
+                recipes: [starterRecipe, mainRecipe, dessertRecipe]
             )
         }
     }
@@ -114,16 +142,41 @@ class MenuViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    /// Load three menus for the given season
+    /// Load menus for the given season from "Curated Menus"
     func loadMenus(for season: String) async {
         isLoading = true
         errorMessage = nil
         do {
-            let all = try await RecipeService.shared.fetchRecipes(for: season)
-            menus = MenuService.generateMenus(from: all, season: season)
+            // MODIFIED: Call the new service and assign directly
+            menus = try await CuratedMenuService.shared.fetchCuratedMenus(for: season)
         } catch {
-            self.errorMessage = error.localizedDescription
+            self.errorMessage = error.localizedDescription // Provide more specific error if possible
         }
         isLoading = false
     }
 }
+
+// IMPORTANT: This code assumes the existence of `Recipe` and `Menu` structs
+// defined elsewhere in your project, with at least the following properties:
+//
+// struct Recipe: Identifiable { // Identifiable if used in SwiftUI lists directly
+//     let id: String // Or UUID, ensure consistency
+//     let title: String
+//     let course: String
+//     let description: String
+//     let imageAttachments: [Attachment] // Assuming Attachment struct { let url: String }
+//     let sourceUrlString: String
+// }
+//
+// struct Menu: Identifiable { // Identifiable if used in SwiftUI lists directly
+//     let id: UUID
+//     let season: String
+//     let title: String
+//     let recipes: [Recipe]
+// }
+//
+// struct Attachment: Identifiable { // Example, if needed for imageAttachments
+//     let id = UUID()
+//     let url: String
+// }
+// Ensure these structs are defined and match the usage above.
