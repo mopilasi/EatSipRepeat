@@ -78,38 +78,61 @@ struct ContentView: View {
                             .padding(.horizontal)
                     }
 
-                    // ─── Menu carousel (one card at a time)
-                    TabView(selection: $currentPage) {
-                        ForEach(Array(viewModel.menus.enumerated()), id: \.element.id) { index, menu in
-                            MenuCard(menu: menu)
+                    // Container for menu display area (TabView, Loading, Empty State)
+                    ZStack {
+                        TabView(selection: $currentPage) {
+                            if viewModel.isLoading || viewModel.menus.isEmpty {
+                                // Placeholder view (shown if loading OR if not loading & menus are empty)
+                                VStack {
+                                    Spacer()
+                                    Text(viewModel.isLoading ? "Loading Menus..." : "No menus available for \(selectedSeason).")
+                                        .font(.custom("Inter-Regular", size: 16))
+                                        .foregroundColor(Color.theme.cream)
+                                        .multilineTextAlignment(.center)
+                                        .padding()
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity)
                                 .padding(.horizontal, Spacing.md)
                                 .frame(height: 260)
-                                .frame(maxWidth: .infinity)
-                                .tag(index)
+                                .tag(-1) // Special tag for this placeholder page
+                            } else {
+                                // Only show MenuCards if NOT loading AND menus are NOT empty
+                                ForEach(Array(viewModel.menus.enumerated()), id: \.element.id) { index, menu in
+                                    MenuCard(menu: menu)
+                                        .padding(.horizontal, Spacing.md)
+                                        .frame(height: 260)
+                                        .frame(maxWidth: .infinity)
+                                        .tag(index)
+                                }
+                            }
+                        }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
+                        .id(viewModel.isLoading)
+
+                        if viewModel.isLoading {
+                            // Opaque Loading Overlay
+                            Color.theme.cream
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color.theme.cream))
                         }
                     }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
                     .frame(height: 280)
-                    .padding(.vertical, Spacing.md)
-                    .onAppear {
-                        // Ensures the initial page is marked visited when TabView appears or menus load.
-                        // This complements the initialization in onChange(of: selectedSeason).
-                        if !viewModel.menus.isEmpty {
-                             visitedPages.insert(currentPage) // Mark current page as visited
-                        }
-                    }
-                    .onChange(of: currentPage) { newPage in
-                        visitedPages.insert(newPage)
-                    }
-                    // This onChange will handle saving state for the outgoing season 
-                    // and loading/initializing state for the new season.
+                    .padding(.vertical, Spacing.md) // Apply vertical padding to the ZStack
                     .onChange(of: selectedSeason) { oldValue, newValue in
                         // Save state for the season we are leaving (oldValue)
-                        // Ensure oldValue is a valid key (e.g. not the initial empty string if that were possible)
                         if !oldValue.isEmpty {
                             seasonCarouselStates[oldValue] = SeasonCarouselState(currentPage: currentPage, visitedPages: visitedPages)
                         }
                         
+                        // Trigger loading for the new season in an async Task
+                        Task {
+                            await viewModel.loadMenus(for: newValue)
+                        }
+
                         // Load state for the new season (newValue) or initialize it
                         if let savedState = seasonCarouselStates[newValue] {
                             currentPage = savedState.currentPage
@@ -117,6 +140,18 @@ struct ContentView: View {
                         } else {
                             currentPage = 0
                             visitedPages = [0] // Default for a new/unvisited season
+                        }
+                    }
+                    .onAppear {
+                        // Initial load for the default selected season in an async Task
+                        if viewModel.menus.isEmpty {
+                            Task {
+                                await viewModel.loadMenus(for: selectedSeason)
+                            }
+                        }
+                        // Initialize state for the first season if it's not already there
+                        if seasonCarouselStates[selectedSeason] == nil {
+                            seasonCarouselStates[selectedSeason] = SeasonCarouselState(currentPage: 0, visitedPages: [0])
                         }
                     }
 
@@ -254,11 +289,14 @@ private struct MenuCard: View {
     let menu: Menu
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
+        VStack(alignment: .leading, spacing: Spacing.lg) { // Main VStack for the card
             // Title
             Text(menu.title)
                 .font(.custom("DrukWide-Bold", size: 24))
                 .foregroundColor(Color.theme.forestGreen)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading) // Ensure title area takes full width
 
             // Three rows, each with a bold label + wrapped body text
             VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -266,11 +304,17 @@ private struct MenuCard: View {
                 row(label: "Main",    text: menu.recipes.first { $0.course == "Main" }?.title)
                 row(label: "Dessert", text: menu.recipes.first { $0.course == "Dessert" }?.title)
             }
+            .frame(maxWidth: .infinity, alignment: .leading) // Ensure recipe rows area takes full width
+            
+            Spacer() // Pushes content above it to the top of the card's frame
         }
         .padding(Spacing.lg)
+        .frame(maxWidth: .infinity) // Ensure the VStack itself tries to take max width *within the padding*
         .background(Color(hex: "#D1BFA3"))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        // The .frame(height: 260) and outer .frame(maxWidth: .infinity) 
+        // are applied by the parent TabView context in ContentView
     }
 
     @ViewBuilder
@@ -279,12 +323,16 @@ private struct MenuCard: View {
             Text(label)
                 .font(.custom("Inter-Semibold", size: 16))
                 .foregroundColor(Color.theme.forestGreen)
+                .frame(width: 75, alignment: .leading)
 
             Text(text ?? "")
                 .font(.custom("Inter-Regular", size: 16))
                 .foregroundColor(Color.theme.forestGreen)
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading) // Ensure recipe title takes available width in HStack
         }
+        .frame(maxWidth: .infinity, alignment: .leading) // Ensure HStack row takes full width
     }
 }
 
