@@ -97,24 +97,44 @@ struct ContentView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.horizontal, Spacing.md)
-                                .frame(height: 260)
                                 .tag(-1) // Special tag for this placeholder page
                             } else {
                                 // Iterate over the combined list of menus and the potential action card
                                 ForEach(Array(carouselPages.enumerated()), id: \.element.id) { index, pageItem in
                                     switch pageItem {
                                     case .menu(let menu):
-                                        MenuCard(menu: menu, isActive: index == currentPage)
-                                            .padding(.horizontal, Spacing.md)
-                                            .frame(height: 260)
-                                            .frame(maxWidth: .infinity)
-                                            .tag(index) // Tag with the index from carouselPages
+                                        HStack(spacing: 0) {
+                                            // Left indicator (hidden for first card)
+                                            if index > 0 {
+                                                Image(systemName: "chevron.left")
+                                                    .font(.system(size: 24, weight: .light))
+                                                    .foregroundColor(Color.theme.primaryCoral)
+                                                    .frame(width: 32)
+                                            } else {
+                                                Spacer().frame(width: 32)
+                                            }
+
+                                            // Card
+                                            MenuCard(menu: menu, isActive: index == currentPage)
+                                                .padding(.horizontal, Spacing.md)
+
+                                            // Right indicator (hidden for last card)
+                                            if index < carouselPages.count - 1 {
+                                                Image(systemName: "chevron.right")
+                                                    .font(.system(size: 24, weight: .light))
+                                                    .foregroundColor(Color.theme.primaryCoral)
+                                                    .frame(width: 32)
+                                            } else {
+                                                Spacer().frame(width: 32)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .tag(index) // Tag with the index from carouselPages
                                     case .addAction:
                                         AddActionCardView {
                                             showComingSoonSheet = true
                                         }
                                         .padding(.horizontal, Spacing.md)
-                                        .frame(height: 260)
                                         .frame(maxWidth: .infinity)
                                         .tag(index) // Tag with the index from carouselPages
                                     }
@@ -134,7 +154,6 @@ struct ContentView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: Color.theme.cream))
                         }
                     }
-                    .frame(height: 280)
                     .padding(.vertical, Spacing.md) // Apply vertical padding to the ZStack
                     .onChange(of: selectedSeason) { oldValue, newValue in
                         // Save state for the season we are leaving (oldValue)
@@ -175,13 +194,6 @@ struct ContentView: View {
                         }
                     }
                     
-                    // Custom Page Indicator View
-                    // Show only if not loading and there are pages to indicate
-                    if !viewModel.isLoading && !carouselPages.isEmpty && carouselPages.count > 1 {
-                        CustomPageIndicatorView(numberOfPages: carouselPages.count, currentPage: $currentPage)
-                            .padding(.bottom, Spacing.sm) // Add some padding
-                    }
-
                     Spacer()
                 }
                 .padding(.top, Spacing.xl)
@@ -328,50 +340,94 @@ struct SeasonPicker: View {
 private struct MenuCard: View {
     let menu: Menu
     let isActive: Bool
-
+    
     @State private var cardOpacity: Double = 0
-
-    // Helper to get icon for course
-    private func icon(for course: String) -> String {
-        switch course {
-        case "Starter": return "🥗"
-        case "Main": return "🍽️" // Standard plate emoji
-        case "Dessert": return "🍰"
-        default: return "•" // Fallback bullet
-        }
+    @State private var currentImageIndex = 0
+    
+    private var recipeImages: [Recipe] {
+        menu.recipes.filter { $0.imageAttachments?.first != nil }
     }
-
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) { 
-            // Title
-            Text(menu.title)
-                .font(.custom("DrukWide-Bold", size: 24))
-                .foregroundColor(Color.theme.forestGreen)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            // 1. Swipeable Image Carousel
+            GeometryReader { geometry in
+                TabView(selection: $currentImageIndex) {
+                    ForEach(Array(recipeImages.enumerated()), id: \.element.id) { index, recipe in
+                        AsyncImage(url: recipe.imageURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: geometry.size.width, height: geometry.size.width * 0.33) 
+                                    .clipped()
+                            case .failure(_):
+                                Color.gray
+                                    .frame(width: geometry.size.width, height: geometry.size.width * 0.33)
+                            case .empty:
+                                ProgressView()
+                                    .frame(width: geometry.size.width, height: geometry.size.width * 0.33)
+                            @unknown default:
+                                Color.gray
+                                    .frame(width: geometry.size.width, height: geometry.size.width * 0.33)
+                            }
+                        }
+                        .tag(index)
+                    }
+                }
+                .frame(height: geometry.size.width * 0.33)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
             
-            // Three rows
-            VStack(alignment: .leading, spacing: 0) { 
-                if let starter = menu.recipes.first(where: { $0.course == "Starter" }) {
-                    courseRow(label: "Starter", text: starter.title, icon: icon(for: "Starter"))
-                    Divider().background(Color.theme.forestGreen.opacity(0.2)).padding(.vertical, Spacing.xs) 
-                }
-                if let main = menu.recipes.first(where: { $0.course == "Main" }) {
-                    courseRow(label: "Main", text: main.title, icon: icon(for: "Main"))
-                    Divider().background(Color.theme.forestGreen.opacity(0.2)).padding(.vertical, Spacing.xs) 
-                }
-                if let dessert = menu.recipes.first(where: { $0.course == "Dessert" }) {
-                    courseRow(label: "Dessert", text: dessert.title, icon: icon(for: "Dessert"))
-                    // No divider after the last item
+            // Content
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text(menu.title)
+                    .font(.custom("DrukWide-Bold", size: 28))
+                    .foregroundColor(Color.theme.forestGreen)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
+                
+                Text(menuDescription)
+                    .font(.custom("Inter-Regular", size: 18))
+                    .foregroundColor(Color.theme.forestGreen.opacity(0.8))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, Spacing.sm)
+                
+                Spacer()
+                
+                // Buttons
+                HStack(spacing: Spacing.lg) {
+                    Button(action: {
+                        // TODO: Implement save functionality
+                    }) {
+                        Text("Save")
+                            .font(.custom("Inter-Semibold", size: 18))
+                            .foregroundColor(Color.theme.primaryCoral)
+                            .padding(.horizontal, Spacing.xl)
+                            .padding(.vertical, Spacing.md)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.theme.primaryCoral, lineWidth: 2)
+                            )
+                    }
+                    
+                    Button(action: {
+                        // TODO: Implement view menu functionality
+                    }) {
+                        Text("View Menu")
+                            .font(.custom("Inter-Semibold", size: 18))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, Spacing.xl)
+                            .padding(.vertical, Spacing.md)
+                            .background(Color.theme.primaryCoral)
+                            .cornerRadius(8)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer()
+            .padding(Spacing.xl)
         }
-        .padding(Spacing.lg)
-        .frame(maxWidth: .infinity)
         .background(Color(hex: "#C7B89C"))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
@@ -388,33 +444,19 @@ private struct MenuCard: View {
                         cardOpacity = 1
                     }
                 }
-            } else { 
+            } else {
                 cardOpacity = 0
             }
         }
     }
-
-    // 
-    @ViewBuilder
-    private func courseRow(label: String, text: String?, icon: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) { 
-            Text(label) // Label first
-                .font(.custom("Inter-Regular", size: 14))
-                .foregroundColor(Color.theme.forestGreen)
-                .frame(width: 65, alignment: .leading) // Fixed width for alignment
-            
-            Text(icon) // Icon as separator
-                .font(.custom("Inter-Regular", size: 14)) // Icon size same as label
-                .foregroundColor(Color.theme.forestGreen)
-
-            Text(text ?? "Not available") // Dish name
-                .font(.custom("Inter-Semibold", size: 18))
-                .foregroundColor(Color.theme.forestGreen)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    
+    private var menuDescription: String {
+        let courses = [
+            menu.recipes.first(where: { $0.course == "Starter" }).map { "Starter: \($0.title)" },
+            menu.recipes.first(where: { $0.course == "Main" }).map { "Main: \($0.title)" },
+            menu.recipes.first(where: { $0.course == "Dessert" }).map { "Dessert: \($0.title)" }
+        ].compactMap { $0 }
+        return courses.joined(separator: "\n")
     }
 }
 
