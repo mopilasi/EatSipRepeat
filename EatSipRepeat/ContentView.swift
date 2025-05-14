@@ -103,33 +103,10 @@ struct ContentView: View {
                                 ForEach(Array(carouselPages.enumerated()), id: \.element.id) { index, pageItem in
                                     switch pageItem {
                                     case .menu(let menu):
-                                        HStack(spacing: 0) {
-                                            // Left indicator (hidden for first card)
-                                            if index > 0 {
-                                                Image(systemName: "chevron.left")
-                                                    .font(.system(size: 24, weight: .light))
-                                                    .foregroundColor(Color.theme.primaryCoral)
-                                                    .frame(width: 32)
-                                            } else {
-                                                Spacer().frame(width: 32)
-                                            }
-
-                                            // Card
-                                            MenuCard(menu: menu, isActive: index == currentPage)
-                                                .padding(.horizontal, Spacing.md)
-
-                                            // Right indicator (hidden for last card)
-                                            if index < carouselPages.count - 1 {
-                                                Image(systemName: "chevron.right")
-                                                    .font(.system(size: 24, weight: .light))
-                                                    .foregroundColor(Color.theme.primaryCoral)
-                                                    .frame(width: 32)
-                                            } else {
-                                                Spacer().frame(width: 32)
-                                            }
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .tag(index) // Tag with the index from carouselPages
+                                        ModernMenuCard(menu: menu, onPrev: {}, onNext: {}, onSave: {}, onView: {})
+                                            .padding(.horizontal, Spacing.md)
+                                            .frame(maxWidth: .infinity)
+                                            .tag(index) // Tag with the index from carouselPages
                                     case .addAction:
                                         AddActionCardView {
                                             showComingSoonSheet = true
@@ -333,6 +310,120 @@ struct SeasonPicker: View {
         )
         .padding(.horizontal, Spacing.md)
         .frame(height: 44)
+    }
+}
+
+// MARK: - ModernMenuCard
+struct ModernMenuCard: View {
+    let menu: Menu
+    let onPrev: () -> Void
+    let onNext: () -> Void
+    let onSave: () -> Void
+    let onView: () -> Void
+
+    @State private var imageIndex = 0
+
+    var body: some View {
+        ZStack {
+            // Card background + shadow
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(hex: "#C7B89C"))
+                .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+
+            VStack(spacing: 0) {
+                // ── Header images
+                TabView(selection: $imageIndex) {
+                    ForEach(menu.recipes.indices, id: \.self) { idx in
+                        AsyncImage(url: menu.recipes[idx].imageURL) { phase in
+                            switch phase {
+                            case .success(let img):
+                                img.resizable().scaledToFill()
+                            default:
+                                Color.theme.cream.opacity(0.1)
+                            }
+                        }
+                        .tag(idx)
+                        .frame(height: 180)
+                        .clipped()
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+
+                // Dots under header
+                HStack(spacing: 6) {
+                    ForEach(menu.recipes.indices, id: \.self) { idx in
+                        Circle()
+                            .fill(idx == imageIndex
+                                  ? Color.theme.primaryCoral
+                                  : Color.gray.opacity(0.4))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .padding(.vertical, 8)
+
+                // ── Content
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(menu.title)
+                        .font(.custom("DrukWide-Bold", size: 20))
+                        .foregroundColor(Color.theme.forestGreen)
+
+                    // Dish list
+                    ForEach(menu.recipes) { r in
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(icon(for: r.course))
+                            Text("\(r.course): \(r.title)")
+                                .font(.custom("Inter-Regular", size: 14))
+                                .foregroundColor(Color.theme.forestGreen)
+                        }
+                    }
+
+                    // Buttons
+                    HStack(spacing: 12) {
+                        Button(action: onSave) {
+                            Text("Save")
+                                .font(.custom("Inter-Semibold", size: 14))
+                                .frame(minWidth: 80)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(action: onView) {
+                            Text("View Recipe")
+                                .font(.custom("Inter-Semibold", size: 14))
+                                .frame(minWidth: 80)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+                .padding(16)
+            }
+
+            // ── Arrows overlay
+            HStack {
+                Button { onPrev() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundColor(Color.theme.primaryCoral)
+                        .padding(12)
+                }
+                Spacer()
+                Button { onNext() } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.title2)
+                        .foregroundColor(Color.theme.primaryCoral)
+                        .padding(12)
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+    }
+
+    private func icon(for course: String) -> String {
+        switch course {
+        case "Starter": return "🥗"
+        case "Main":    return "🍽️"
+        case "Dessert": return "🍰"
+        default:        return "•"
+        }
     }
 }
 
