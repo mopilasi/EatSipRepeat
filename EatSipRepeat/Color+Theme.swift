@@ -7,6 +7,7 @@ extension Color {
         let primaryCoral = Color(hex: "#E45A30")
         let forestGreen  = Color(hex: "#3B4A36")
         let outline      = Color(hex: "#79747E")
+        let sand         = Color(hex: "#D1BFA3")
     }
     
     /// Initialise with #RRGGBB / #AARRGGBB / #RGB
