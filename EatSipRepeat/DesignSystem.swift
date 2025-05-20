@@ -10,16 +10,11 @@ enum Spacing {
 }
 
 // MARK: - Data Models
-// Font extensions removed, use .custom() or add fonts to project.
-// Color extensions removed, use Color.theme from Color+Theme.swift.
-
-/// Data model for menu information (see `MenuCard` and `ContentView`).
-/// Driven by your Airtable data and manually conformed to `Identifiable` and `Decodable`.
-struct Menu: Identifiable, Decodable, Equatable, Hashable { // Added Equatable, Hashable. Assumed Decodable was intended.
-    let id: UUID // Keep UUID for Menu, or change to String if also from Airtable with String ID
+struct Menu: Identifiable, Decodable, Equatable, Hashable {
+    let id: UUID
     let season: String
     let title: String
-    let recipes: [Recipe] // This will now use the new Recipe struct
+    let recipes: [Recipe]
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -40,21 +35,16 @@ struct Menu: Identifiable, Decodable, Equatable, Hashable { // Added Equatable, 
         self.recipes = recipes
     }
     
-    // Decoder init might need adjustment if Menu IDs also become strings from Airtable
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID() // Or String if changed
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         season = try container.decode(String.self, forKey: .season)
         title = try container.decode(String.self, forKey: .title)
-        // Recipes will be decoded using the new Recipe.CodingKeys
-        recipes = try container.decodeIfPresent([Recipe].self, forKey: .recipes) ?? [] 
+        recipes = try container.decodeIfPresent([Recipe].self, forKey: .recipes) ?? []
     }
 }
 
 // MARK: - Sample Data
-// Updated to reflect new Recipe structure. 
-// Note: imageAttachments would typically come from a valid URL.
 let sampleMenus: [Menu] = [
     Menu(
         season: "Spring", 
@@ -65,7 +55,7 @@ let sampleMenus: [Menu] = [
                 title: "Pea & Mint Soup",
                 course: "Starter",
                 description: "A refreshing start to your spring meal.",
-                imageAttachments: [Attachment(url: "placeholder_pea_soup_url")], // Replace with actual URLs
+                imageAttachments: [Attachment(url: "placeholder_pea_soup_url")],
                 sourceUrlString: "https://example.com/pea-soup",
                 isSaved: false
             ),
@@ -95,11 +85,11 @@ let sampleMenus: [Menu] = [
 struct FilledCoralButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom("Druk Wide Bold", size: 16)) // Using .custom directly
-            .foregroundColor(Color.theme.cream)       // Updated to Color.theme
+            .font(.custom("Druk Wide Bold", size: 16))
+            .foregroundColor(Color.theme.cream)
             .padding(.vertical, Spacing.sm)
             .padding(.horizontal, Spacing.lg)
-            .background(Color.theme.primaryCoral.opacity(configuration.isPressed ? 0.85 : 1)) // Updated
+            .background(Color.theme.primaryCoral.opacity(configuration.isPressed ? 0.85 : 1))
             .clipShape(Capsule())
     }
 }

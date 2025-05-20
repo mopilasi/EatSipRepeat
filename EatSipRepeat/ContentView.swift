@@ -125,7 +125,7 @@ struct ContentView: View {
         
         var body: some View {
             ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: true) { // Enabled scroll indicator
+                ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: Spacing.sm) {
                         ForEach(chips, id: \.self) { chip in
                             Button {
@@ -140,7 +140,7 @@ struct ContentView: View {
                                     .foregroundColor(selectedChip == chip ? .theme.cream : .theme.forestGreen)
                                     .padding(.horizontal, Spacing.md)
                                     .frame(height: 32)
-                                    .frame(maxWidth: 120) // Max width for long labels
+                                    .frame(maxWidth: 120)
                                     .background(
                                         Capsule()
                                             .fill(selectedChip == chip ? Color.theme.forestGreen.opacity(0.9) : .clear)
@@ -177,15 +177,13 @@ struct ContentView: View {
                     
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 0) {
-                            // Consistent vertical spacing
                             VStack(spacing: 0) {
                                 FilterToggle(selected: $selectedFilterType)
-                                    .padding(.bottom, Spacing.md) // 12pt between pill→chips
+                                    .padding(.bottom, Spacing.md)
                                 
                                 ChipSelector(selectedChip: $selectedChip, chips: currentChips)
-                                    .padding(.bottom, Spacing.lg) // 16pt between chips→carousel
+                                    .padding(.bottom, Spacing.lg)
                                 
-                                // Content area
                                 Group {
                                     if viewModel.isLoading {
                                         loadingView
@@ -202,7 +200,6 @@ struct ContentView: View {
                 }
             }
             .overlay(alignment: .leading) {
-                // ─── Side Menu Overlay
                 if isSideMenuPresented {
                     Color.theme.forestGreen.opacity(0.5)
                         .ignoresSafeArea()
@@ -228,8 +225,7 @@ struct ContentView: View {
     }
     
     private var headerView: some View {
-        VStack(spacing: Spacing.lg) { // Changed to lg (16pt) for header→pill spacing
-            // Title row with proper spacing
+        VStack(spacing: Spacing.lg) {
             HStack {
                 Button {
                     isSideMenuPresented.toggle()
@@ -243,7 +239,7 @@ struct ContentView: View {
                 
                 Text("What's cooking?")
                     .font(.custom("DrukWide-Bold", size: 20))
-                    .foregroundColor(.theme.forestGreen) // Changed to forest green
+                    .foregroundColor(.theme.forestGreen)
                 
                 Spacer()
                 
@@ -253,7 +249,6 @@ struct ContentView: View {
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.md)
-            
         }
         .background(Color.theme.cream)
     }
@@ -322,9 +317,10 @@ struct ContentView: View {
     private enum CarouselPageItem: Identifiable, Hashable {
         case menu(Menu)
         case addAction
+        
         var id: String {
             switch self {
-            case .menu(let m):      return m.id.uuidString
+            case .menu(let menu):   return menu.id.uuidString
             case .addAction:        return "addActionCard"
             }
         }
@@ -333,6 +329,7 @@ struct ContentView: View {
     private struct CustomPageIndicatorView: View {
         let numberOfPages: Int
         @Binding var currentPage: Int
+        
         var body: some View {
             HStack(spacing: 8) {
                 ForEach(0..<numberOfPages, id: \.self) { idx in
@@ -346,16 +343,19 @@ struct ContentView: View {
 
     private struct ComingSoonView: View {
         @Environment(\.dismiss) var dismiss
+        
         var body: some View {
             NavigationView {
                 VStack(spacing: Spacing.lg) {
                     Spacer()
                     Image("UnderConstruction")
-                        .resizable().scaledToFit().frame(width: 170, height: 170)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 170, height: 170)
                     Text("Feature Coming Soon!")
                         .font(.custom("DrukWide-Bold", size: 26))
                         .foregroundColor(Color.theme.forestGreen)
-                    Text("We’re teaching the app to stir the pot — expect brand‑new menus soon!")
+                    Text("We're teaching the app to stir the pot — expect brand‑new menus soon!")
                         .font(.custom("Inter-Regular", size: 16))
                         .foregroundColor(Color.theme.primaryCoral)
                         .multilineTextAlignment(.center)
@@ -363,7 +363,11 @@ struct ContentView: View {
                     Spacer()
                 }
                 .padding(Spacing.xl)
-                .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { dismiss() } } }
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") { dismiss() }
+                    }
+                }
             }
         }
     }
@@ -373,11 +377,13 @@ struct ContentView: View {
         let onSave: () -> Void
         let onView: () -> Void
         @State private var imageIndex = 0
+        
         var body: some View {
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.white)
                     .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                
                 VStack(spacing: 0) {
                     TabView(selection: $imageIndex) {
                         ForEach(menu.recipes.indices, id: \.self) { idx in
@@ -393,6 +399,7 @@ struct ContentView: View {
                         }
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    
                     HStack(spacing: 6) {
                         ForEach(menu.recipes.indices, id: \.self) { idx in
                             Circle()
@@ -401,18 +408,21 @@ struct ContentView: View {
                         }
                     }
                     .padding(.vertical, 8)
+                    
                     VStack(alignment: .leading, spacing: 12) {
                         Text(menu.title)
                             .font(.custom("DrukWide-Bold", size: 20))
                             .foregroundColor(Color.theme.forestGreen)
-                        ForEach(menu.recipes) { r in
+                        
+                        ForEach(menu.recipes) { recipe in
                             HStack(spacing: 8) {
-                                Text(icon(for: r.course))
-                                Text("\(r.course): \(r.title)")
+                                Text(icon(for: recipe.course))
+                                Text("\(recipe.course): \(recipe.title)")
                                     .font(.custom("Inter-Regular", size: 14))
                                     .foregroundColor(Color.theme.forestGreen)
                             }
                         }
+                        
                         HStack(spacing: Spacing.lg) {
                             Button(action: onSave) {
                                 Text("Save Menu")
@@ -420,9 +430,12 @@ struct ContentView: View {
                                     .foregroundColor(Color.theme.primaryCoral)
                                     .padding(.vertical, Spacing.md)
                                     .padding(.horizontal, Spacing.xl)
-                                    .overlay(RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.theme.primaryCoral, lineWidth: 2))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.theme.primaryCoral, lineWidth: 2)
+                                    )
                             }
+                            
                             Button(action: onView) {
                                 Text("Plan Menu")
                                     .font(.custom("Inter-Semibold", size: 18))
@@ -440,23 +453,27 @@ struct ContentView: View {
             }
             .padding(.horizontal, Spacing.md)
         }
+        
         private func icon(for course: String) -> String {
             switch course {
             case "Starter": return "🥗"
             case "Main":    return "🍽️"
             case "Dessert": return "🍰"
-            default:         return "•"
+            default:        return "•"
             }
         }
     }
 
     private struct AddActionCardView: View {
         let onTap: () -> Void
+        
         var body: some View {
             VStack(spacing: Spacing.md) {
                 Spacer()
                 Image(systemName: "plus.circle.fill")
-                    .resizable().scaledToFit().frame(width: 60, height: 60)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
                     .foregroundColor(Color.theme.primaryCoral)
                 Text("Generate New Menus")
                     .font(.custom("Inter-Semibold", size: 18))
@@ -480,7 +497,7 @@ struct ContentView: View {
             case .menu(let menu):
                 ModernMenuCard(menu: menu, onSave: {}, onView: {})
             case .addAction:
-                AddActionCardView { }
+                AddActionCardView(onTap: {})
             }
         }
     }
